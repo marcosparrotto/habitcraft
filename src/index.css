@@ -1,0 +1,278 @@
+@import "tailwindcss";
+
+@theme {
+  --font-pixel: "Press Start 2P", "Courier New", monospace;
+  --font-mono-game: "VT323", "Courier New", monospace;
+
+  /* ---------------------------------------------------------------
+     Cores de BLOCO (minério): identidade do app, iguais de dia e de noite.
+     Usadas como superfície de ícone/botão, sempre com texto branco ou
+     obsidiana por cima (ver theme/blockColors.ts), então o contraste
+     não depende do tema.
+     --------------------------------------------------------------- */
+  --color-grass: #5ea62e;
+  --color-grass-dark: #3f7a1f;
+  --color-dirt: #8b5a2b;
+  --color-dirt-dark: #6b4423;
+  --color-stone: #8a8a8a;
+  --color-stone-dark: #5b5b5b;
+  --color-stone-light: #a9a9a9;
+  --color-obsidian: #17131f;
+
+  --color-wood: #a97c50;
+  /* copper e redstone foram ajustados para bater AA com o texto que carregam */
+  --color-copper: #c07a5b;
+  --color-silver: #c7ccd4;
+  --color-gold: #ffd23f;
+  --color-diamond: #4fd6e8;
+  --color-netherite: #4a4149;
+  --color-emerald: #35c95d;
+  --color-redstone: #cf2d26;
+
+  /* ---------------------------------------------------------------
+     Tokens SEMÂNTICOS: mudam com o ciclo dia/noite.
+     Nenhum componente deve hardcodar cor de superfície/texto — use
+     bg-bg, bg-panel, bg-panel-light, border-edge, text-ink, text-ink-dim,
+     text-accent, text-highlight.
+     --------------------------------------------------------------- */
+  --color-bg: var(--t-bg);
+  --color-panel: var(--t-panel);
+  --color-panel-light: var(--t-panel-light);
+  --color-edge: var(--t-edge);
+  --color-ink: var(--t-ink);
+  --color-ink-dim: var(--t-ink-dim);
+  --color-accent: var(--t-accent);
+  --color-highlight: var(--t-highlight);
+  /* vermelho de erro legível nas duas variantes (bg-redstone segue sendo bloco) */
+  --color-danger: var(--t-danger);
+  --color-sky-top: var(--t-sky-top);
+  --color-sky-bottom: var(--t-sky-bottom);
+  /* texto por cima do céu: escuro de dia, claro à noite */
+  --color-sky-ink: var(--t-sky-ink);
+}
+
+/* --night-mix é a única variável que o JS mexe: 0% = pleno dia, 100% = noite
+   fechada. Registrada como <percentage> pra que a troca de tema possa ser
+   interpolada pelo CSS em vez de dar um corte seco. */
+@property --night-mix {
+  syntax: "<percentage>";
+  inherits: true;
+  initial-value: 100%;
+}
+
+:root {
+  /* ---- variante DIA ---- */
+  --day-bg: #bdd9ee;
+  --day-panel: #f2ecdd;
+  --day-panel-light: #ddd3bd;
+  --day-edge: #3a3227;
+  --day-ink: #201b14;
+  --day-ink-dim: #554c3d;
+  --day-accent: #2b5c15;
+  --day-highlight: #6f4e00;
+  --day-sky-top: #4a90c9;
+  --day-sky-bottom: #bfe6ff;
+  --day-danger: #a31d17;
+  --day-sky-ink: #12233a;
+  --day-sky-shadow: rgba(255, 255, 255, 0.55);
+
+  /* ---- variante NOITE ---- */
+  --night-bg: #1a1a2e;
+  --night-panel: #2b2b2b;
+  --night-panel-light: #3c3c3c;
+  --night-edge: #17131f;
+  --night-ink: #f2f2f2;
+  --night-ink-dim: #a9a9a9;
+  --night-accent: #6fbf39;
+  --night-highlight: #ffd23f;
+  --night-sky-top: #0b1230;
+  --night-sky-bottom: #1b2a5e;
+  --night-danger: #ff7a72;
+  --night-sky-ink: #ffffff;
+  --night-sky-shadow: rgba(0, 0, 0, 0.5);
+
+  --night-mix: 100%;
+
+  --t-bg: color-mix(in oklab, var(--night-bg) var(--night-mix), var(--day-bg));
+  --t-panel: color-mix(in oklab, var(--night-panel) var(--night-mix), var(--day-panel));
+  --t-panel-light: color-mix(
+    in oklab,
+    var(--night-panel-light) var(--night-mix),
+    var(--day-panel-light)
+  );
+  --t-edge: color-mix(in oklab, var(--night-edge) var(--night-mix), var(--day-edge));
+  --t-ink: color-mix(in oklab, var(--night-ink) var(--night-mix), var(--day-ink));
+  --t-ink-dim: color-mix(in oklab, var(--night-ink-dim) var(--night-mix), var(--day-ink-dim));
+  --t-accent: color-mix(in oklab, var(--night-accent) var(--night-mix), var(--day-accent));
+  --t-danger: color-mix(in oklab, var(--night-danger) var(--night-mix), var(--day-danger));
+  --t-highlight: color-mix(
+    in oklab,
+    var(--night-highlight) var(--night-mix),
+    var(--day-highlight)
+  );
+  --t-sky-top: color-mix(in oklab, var(--night-sky-top) var(--night-mix), var(--day-sky-top));
+  --t-sky-bottom: color-mix(
+    in oklab,
+    var(--night-sky-bottom) var(--night-mix),
+    var(--day-sky-bottom)
+  );
+  --t-sky-ink: color-mix(in oklab, var(--night-sky-ink) var(--night-mix), var(--day-sky-ink));
+  --t-sky-shadow: color-mix(
+    in srgb,
+    var(--night-sky-shadow) var(--night-mix),
+    var(--day-sky-shadow)
+  );
+
+  transition: --night-mix 900ms linear;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    transition: none;
+  }
+}
+
+@layer base {
+  html,
+  body {
+    height: 100%;
+  }
+
+  body {
+    background-color: var(--color-bg);
+    background-image: repeating-linear-gradient(
+      0deg,
+      rgba(0, 0, 0, 0.025) 0px,
+      rgba(0, 0, 0, 0.025) 2px,
+      transparent 2px,
+      transparent 4px
+    );
+    color: var(--color-ink);
+    font-family: var(--font-mono-game);
+    font-size: 1.15rem;
+    image-rendering: pixelated;
+  }
+
+  h1,
+  h2,
+  h3,
+  .font-pixel {
+    font-family: var(--font-pixel);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes popIn {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes floatUp {
+  0% {
+    transform: translateY(12px) scale(0.9);
+    opacity: 0;
+  }
+  25% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+  75% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-28px);
+    opacity: 0;
+  }
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-6px) rotate(-6deg);
+  }
+  40% {
+    transform: translateX(6px) rotate(6deg);
+  }
+  60% {
+    transform: translateX(-4px) rotate(-4deg);
+  }
+  80% {
+    transform: translateX(4px) rotate(4deg);
+  }
+}
+
+@keyframes sparkle {
+  0%,
+  100% {
+    opacity: 0.2;
+    transform: scale(0.7);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.3);
+  }
+}
+
+@keyframes toastIn {
+  0% {
+    transform: translate(-50%, -160%);
+  }
+  100% {
+    transform: translate(-50%, 0);
+  }
+}
+
+@layer utilities {
+  .pixel-border {
+    border-style: solid;
+    border-width: 4px;
+    border-image-slice: 2;
+    border-image-width: 4px;
+    border-image-repeat: stretch;
+    border-image-source: conic-gradient(
+      from 90deg at 4px 4px,
+      #0000 90deg,
+      rgba(0, 0, 0, 0.55) 0
+    );
+    image-rendering: pixelated;
+  }
+
+  .pixel-shadow {
+    box-shadow: 4px 4px 0 0 rgba(0, 0, 0, 0.45);
+  }
+
+  .crosshatch-bg {
+    background-image: repeating-linear-gradient(
+      45deg,
+      rgba(0, 0, 0, 0.035) 0,
+      rgba(0, 0, 0, 0.035) 1px,
+      transparent 1px,
+      transparent 8px
+    );
+  }
+
+  /* superfícies acompanham o ciclo sem "piscar" quando o fator de luz muda */
+  .theme-fade {
+    transition:
+      background-color 900ms linear,
+      border-color 900ms linear,
+      color 900ms linear;
+  }
+}
