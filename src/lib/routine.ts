@@ -275,6 +275,40 @@ export function missedYesterday(
   return status;
 }
 
+/* ---------------- blocos fixos ---------------- */
+
+/** Blocos que ocupam a data, em ordem de início. */
+export function blocksForDate(blocks: Habit[], date: Date): Habit[] {
+  return blocks
+    .filter((b) => occursOn(b, date))
+    .sort((a, b) => minutesOf(a) - minutesOf(b));
+}
+
+function endMinutesOf(block: Habit): number {
+  if (!block.end_time) return minutesOf(block);
+  const [h, m] = block.end_time.split(":");
+  return Number(h) * 60 + Number(m);
+}
+
+/** O bloco cobre esta hora cheia da grade? */
+export function blockCoversHour(block: Habit, hour: number): boolean {
+  const start = minutesOf(block);
+  const end = endMinutesOf(block);
+  return hour * 60 + 59 >= start && hour * 60 < end;
+}
+
+/** É a primeira hora do bloco na grade — onde vai o rótulo. */
+export function blockStartsAtHour(block: Habit, hour: number): boolean {
+  return Math.floor(minutesOf(block) / 60) === hour;
+}
+
+/** "09:00–18:00" */
+export function blockRange(block: Habit): string {
+  const start = block.scheduled_time?.slice(0, 5) ?? "";
+  const end = block.end_time?.slice(0, 5) ?? "";
+  return end ? `${start}–${end}` : start;
+}
+
 /** Os 7 dias da semana (segunda a domingo) que contêm a data. */
 export function weekDaysOf(date: Date): Date[] {
   const monday = subDays(date, weekdayOf(date) - 1);

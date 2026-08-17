@@ -2,11 +2,15 @@ import { useMemo, useState } from "react";
 import { addDays, format, isSameDay, subDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { Habit } from "../types";
-import { useHabits } from "../queries/habits";
+import { useHabits, useTimeBlocks } from "../queries/habits";
 import { useAddCheckIn, useCheckIns, useUndoCheckIn } from "../queries/checkins";
 import { toDateKey } from "../lib/dateUtils";
 import {
   amountOn,
+  blockCoversHour,
+  blockRange,
+  blockStartsAtHour,
+  blocksForDate,
   buildProgressIndex,
   dailyTarget,
   dayStatus,
@@ -19,6 +23,7 @@ import {
 import { DayNightHero } from "../components/DayNightHero";
 import { DayHotbar, type HotbarDay } from "../components/DayHotbar";
 import { RoutineItemRow } from "../components/RoutineItemRow";
+import { TimeBlockRow } from "../components/TimeBlockRow";
 import { XpBar } from "../components/ui/XpBar";
 import { PixelIcon } from "../components/ui/PixelIcon";
 import { PixelPanel } from "../components/ui/PixelPanel";
@@ -30,6 +35,7 @@ const HOURS = Array.from({ length: 19 }, (_, i) => i + 5); // 05h – 23h
 
 export function Week() {
   const { data: habits, isLoading: habitsLoading } = useHabits();
+  const { data: timeBlocks } = useTimeBlocks();
   const { data: checkIns, isLoading: checkInsLoading } = useCheckIns();
   const addCheckIn = useAddCheckIn();
   const undoCheckIn = useUndoCheckIn();
@@ -39,6 +45,7 @@ export function Week() {
   const [view, setView] = useState<View>("lista");
 
   const allHabits = useMemo(() => habits ?? [], [habits]);
+  const blocks = useMemo(() => timeBlocks ?? [], [timeBlocks]);
   const progress = useMemo(() => buildProgressIndex(checkIns ?? []), [checkIns]);
   const days = useMemo(() => weekDaysOf(selected), [selected]);
 
@@ -158,17 +165,24 @@ export function Week() {
           )}
 
           <div className="space-y-2">
-            {selectedStatus.scheduled.map((habit) => (
-              <RoutineItemRow
-                key={habit.id}
-                habit={habit}
-                done={isDoneOn(progress, habit, selected)}
-                onToggle={() => toggle(habit, selected)}
-                disabled={busy || isFuture}
-                amount={amountOn(progress, habit, selected)}
-                target={dailyTarget(habit)}
-              />
-            ))}
+            {/* blocos entram na mesma linha do tempo dos hábitos, por horário */}
+            {[...selectedStatus.scheduled, ...blocksForDate(blocks, selected)]
+              .sort((a, b) => minutesOf(a) - minutesOf(b))
+              .map((item) =>
+                item.kind === "block" ? (
+                  <TimeBlockRow key={item.id} block={item} />
+                ) : (
+                  <RoutineItemRow
+                    key={item.id}
+                    habit={item}
+                    done={isDoneOn(progress, item, selected)}
+                    onToggle={() => toggle(item, selected)}
+                    disabled={busy || isFuture}
+                    amount={amountOn(progress, item, selected)}
+                    target={dailyTarget(item)}
+                  />
+                ),
+              )}
           </div>
 
           {selectedStatus.complete && (
@@ -208,13 +222,26 @@ export function Week() {
                   const inSlot = habitsForDate(allHabits, day).filter(
                     (h) => Math.floor(minutesOf(h) / 60) === hour,
                   );
+                  const block = blocksForDate(blocks, day).find((b) =>
+                    blockCoversHour(b, hour),
+                  );
                   return (
                     <div
                       key={day.toISOString()}
-                      className={`min-h-9 border-2 p-0.5 flex flex-wrap gap-0.5 ${
+                      title={block ? `${block.name} · ${blockRange(block)}` : undefined}
+                      className={`min-h-9 border-2 p-0.5 flex flex-wrap items-center gap-0.5 ${
                         isSameDay(day, today) ? "border-highlight/50" : "border-panel-light"
-                      }`}
+                      } ${block ? "bg-panel-light" : ""}`}
                     >
+                      {/* o ícone se repete em toda hora coberta: a faixa inteira
+                          precisa ler como ocupada, não só o começo */}
+                      {block && (
+                        <PixelIcon
+                          name={block.pixel_icon}
+                          fallback={block.icon}
+                          className={`w-5 h-5 ${blockStartsAtHour(block, hour) ? "" : "opacity-60"}`}
+                        />
+                      )}
                       {inSlot.map((habit) => (
                         <span
                           key={habit.id}
@@ -238,6 +265,17 @@ export function Week() {
           <p className="text-ink-dim text-sm mt-3">
             Ícone apagado = pendente. Para marcar, use a visão em lista.
           </p>
+
+          {blocks.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
+              {blocks.map((block) => (
+                <span key={block.id} className="flex items-center gap-2 text-ink-dim text-sm">
+                  <span className="w-3 h-3 bg-panel-light border-2 border-edge" aria-hidden />
+                  {block.name} · {blockRange(block)}
+                </span>
+              ))}
+            </div>
+          )}
         </PixelPanel>
       )}
 

@@ -51,6 +51,7 @@ on conflict (user_id, slug) do update set
   icon            = excluded.icon,
   pixel_icon      = excluded.pixel_icon,
   color           = excluded.color,
+  kind            = 'habit',
   frequency_type  = excluded.frequency_type,
   scheduled_time  = excluded.scheduled_time,
   days_of_week    = excluded.days_of_week,
@@ -59,7 +60,30 @@ on conflict (user_id, slug) do update set
   target_unit     = excluded.target_unit,
   archived        = false;
 
+-- ============ blocos fixos ============
+-- Tempo ocupado, não hábito: ocupa a grade e dá contexto ao dia, mas não tem
+-- check-in e não entra em sequência, aderência, XP ou medalhas.
+insert into habits (
+  user_id, slug, name, icon, pixel_icon, color, kind,
+  frequency_type, scheduled_time, end_time, days_of_week, category, archived
+)
+select
+  u.id, 'trabalho', 'Trabalho', '💼', 'briefcase', 'stone', 'block',
+  'daily', time '09:00', time '18:00', array[1,2,3,4,5]::smallint[], 'Trabalho', false
+from (select id from auth.users order by created_at asc limit 1) u
+on conflict (user_id, slug) do update set
+  name           = excluded.name,
+  icon           = excluded.icon,
+  pixel_icon     = excluded.pixel_icon,
+  color          = excluded.color,
+  kind           = excluded.kind,
+  scheduled_time = excluded.scheduled_time,
+  end_time       = excluded.end_time,
+  days_of_week   = excluded.days_of_week,
+  category       = excluded.category,
+  archived       = false;
+
 -- confira o resultado:
-select slug, name, scheduled_time, days_of_week, target_quantity
+select slug, name, kind, scheduled_time, end_time, days_of_week, target_quantity
 from habits
-order by scheduled_time nulls last;
+order by kind, scheduled_time nulls last;

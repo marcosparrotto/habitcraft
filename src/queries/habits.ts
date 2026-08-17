@@ -3,7 +3,13 @@ import { supabase } from "../lib/supabaseClient";
 import type { Habit, HabitInput } from "../types";
 
 export const habitsKey = ["habits"];
+export const timeBlocksKey = ["habits", "blocks"];
 
+/**
+ * Só hábitos de verdade. O filtro por `kind` mora aqui de propósito: como todas
+ * as telas consomem este hook, bloco fixo nunca vaza para check-in, sequência,
+ * aderência, XP ou medalhas — quem quiser bloco pede explicitamente.
+ */
 export function useHabits() {
   return useQuery({
     queryKey: habitsKey,
@@ -12,7 +18,25 @@ export function useHabits() {
         .from("habits")
         .select("*")
         .eq("archived", false)
+        .eq("kind", "habit")
         .order("created_at", { ascending: true });
+      if (error) throw error;
+      return data as Habit[];
+    },
+  });
+}
+
+/** Blocos fixos (tempo ocupado) — usados só como contexto visual. */
+export function useTimeBlocks() {
+  return useQuery({
+    queryKey: timeBlocksKey,
+    queryFn: async (): Promise<Habit[]> => {
+      const { data, error } = await supabase
+        .from("habits")
+        .select("*")
+        .eq("archived", false)
+        .eq("kind", "block")
+        .order("scheduled_time", { ascending: true });
       if (error) throw error;
       return data as Habit[];
     },

@@ -85,6 +85,17 @@ const CLOCK = [
   "..KKKK..",
 ];
 
+const BRIEFCASE = [
+  "..HHHH..",
+  ".CCCCCC.",
+  "CCCCCCCC",
+  "CCCLLCCC",
+  "CCCLLCCC",
+  "CCCCCCCC",
+  "CCCCCCCC",
+  ".CCCCCC.",
+];
+
 export const PIXEL_ICONS: Record<string, PixelIconDef> = {
   book_gold: { pattern: BOOK, palette: { B: "#c9a227", C: "#ffffff", P: "#e8d9b5" } },
   book_purple: { pattern: BOOK, palette: { B: "#2b1b40", C: "#6a3fb5", P: "#b98cf0" } },
@@ -95,6 +106,7 @@ export const PIXEL_ICONS: Record<string, PixelIconDef> = {
   dumbbell: { pattern: DUMBBELL, palette: { W: "#b0b0b8", w: "#4a4a52" } },
   diamond: { pattern: DIAMOND, palette: { W: "#1a8f8f", D: "#55e6e6" } },
   clock: { pattern: CLOCK, palette: { K: "#4a4a52", F: "#e8e2cf", H: "#1a1a1a" } },
+  briefcase: { pattern: BRIEFCASE, palette: { H: "#4a3a2a", C: "#8a5a2e", L: "#e8b33d" } },
 };
 
 export const PIXEL_ICON_KEYS = Object.keys(PIXEL_ICONS);
@@ -109,6 +121,7 @@ export const PIXEL_ICON_LABELS: Record<string, string> = {
   dumbbell: "Halteres",
   diamond: "Diamante",
   clock: "Relógio",
+  briefcase: "Maleta",
 };
 
 export function isPixelIcon(key: string | null | undefined): key is string {

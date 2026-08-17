@@ -28,6 +28,11 @@ create table if not exists habits (
   days_of_week smallint[],
   -- chave do ícone pixel-art (ver src/theme/pixelIcons.ts); `icon` segue como fallback emoji.
   pixel_icon text,
+  -- 'habit' = hábito com check-in; 'block' = tempo ocupado (ex: trabalho), que
+  -- aparece na grade mas não se marca nem entra em nenhuma métrica.
+  kind text not null default 'habit' check (kind in ('habit', 'block')),
+  -- fim do bloco fixo; hábito não usa.
+  end_time time,
   constraint multiple_daily_needs_target check (
     frequency_type <> 'multiple_daily' or (target_quantity is not null and target_quantity > 0)
   ),
@@ -39,8 +44,15 @@ create table if not exists habits (
       array_length(days_of_week, 1) between 1 and 7
       and days_of_week <@ array[1,2,3,4,5,6,7]::smallint[]
     )
+  ),
+  constraint block_needs_range check (
+    kind <> 'block' or (
+      scheduled_time is not null and end_time is not null and end_time > scheduled_time
+    )
   )
 );
+
+create index if not exists habits_kind_idx on habits (user_id, kind);
 
 -- nulls são distintos no Postgres: hábitos sem slug (criados pela interface) não colidem.
 create unique index if not exists habits_user_slug_idx on habits (user_id, slug);

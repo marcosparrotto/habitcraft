@@ -38,13 +38,14 @@ No SQL Editor, nesta ordem:
    destrutivo**: apaga todos os hábitos, check-ins e medalhas. Use só para começar do
    zero; hábitos criados pela interface têm `slug` nulo e não seriam sobrescritos pelo
    seed, virando duplicatas.
-2. [`supabase/002_rotina.sql`](supabase/002_rotina.sql) — adiciona `slug`,
-   `days_of_week` e `pixel_icon` em `habits`. Pule se o banco foi criado com a versão
-   atual do `schema.sql`, que já traz essas colunas.
-3. [`supabase/seed_rotina.sql`](supabase/seed_rotina.sql) — insere os 9 hábitos da
-   rotina com horário, dias da semana e ícone pixel-art. Idempotente: rodar de novo
-   atualiza em vez de duplicar. Pega o primeiro usuário de `auth.users`, então crie o
-   usuário antes.
+2. [`supabase/002_rotina.sql`](supabase/002_rotina.sql) e
+   [`supabase/003_blocos.sql`](supabase/003_blocos.sql) — adicionam `slug`,
+   `days_of_week`, `pixel_icon`, `kind` e `end_time` em `habits`. Pule se o banco foi
+   criado com a versão atual do `schema.sql`, que já traz essas colunas.
+3. [`supabase/seed_rotina.sql`](supabase/seed_rotina.sql) — insere os hábitos da rotina
+   (com horário, dias da semana e ícone pixel-art) e o bloco fixo de trabalho.
+   Idempotente: rodar de novo atualiza em vez de duplicar. Pega o primeiro usuário de
+   `auth.users`, então crie o usuário antes.
 
 ### Sandbox de UI (opcional)
 
@@ -83,6 +84,23 @@ hábito: **sequência** (🔥 consecutivos) e **total** (📦 acumulado, com fal
 | 100   | Ouro      |
 | 200   | Diamante  |
 | 365   | Netherite |
+
+## Hábito x bloco fixo
+
+`habits.kind` separa duas coisas que moram na mesma tabela:
+
+| `kind`  | O que é                | Check-in | Conta em streak/aderência/XP/medalhas |
+| ------- | ---------------------- | -------- | ------------------------------------- |
+| `habit` | hábito da rotina       | sim      | sim                                   |
+| `block` | tempo ocupado (trabalho) | não    | não                                   |
+
+Bloco fixo existe só para dar contexto: ele preenche a grade de horários e aparece
+como linha não clicável nas listas, mostrando onde o dia já está tomado. Se trabalho
+fosse um hábito, a sequência passaria a medir presença no trabalho junto com
+devocional e leitura, e o dia só fecharia depois de "marcar que trabalhou".
+
+O filtro mora em `useHabits()`, que só devolve `kind = 'habit'` — por isso nenhuma
+tela precisa lembrar de excluir blocos. Quem quer bloco chama `useTimeBlocks()`.
 
 ## A rotina como sistema
 

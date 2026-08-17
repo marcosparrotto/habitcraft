@@ -16,7 +16,9 @@ interface Row {
   [key: string]: any;
 }
 
-const ROTINA: Omit<Habit, "id" | "user_id" | "created_at">[] = [
+type SeedHabit = Omit<Habit, "id" | "user_id" | "created_at" | "kind" | "end_time">;
+
+const ROTINA: SeedHabit[] = [
   { slug: "devocional", name: "Devocional (2-3 capítulos)", icon: "🙏", pixel_icon: "book_gold", color: "gold", frequency_type: "daily", scheduled_time: "06:35:00", days_of_week: [1, 2, 3, 4, 5, 6, 7], category: "Espiritual", target_quantity: null, target_unit: null, weekly_target_count: null, archived: false },
   { slug: "passeio_manha", name: "Passeio manhã + podcast técnico", icon: "🐾", pixel_icon: "bone", color: "grass", frequency_type: "daily", scheduled_time: "06:50:00", days_of_week: [1, 2, 3, 4, 5, 6, 7], category: "Movimento", target_quantity: null, target_unit: null, weekly_target_count: null, archived: false },
   { slug: "estudo_cert", name: "Estudo de certificação", icon: "📚", pixel_icon: "book_purple", color: "diamond", frequency_type: "daily", scheduled_time: "07:45:00", days_of_week: [1, 2, 3, 4, 5], category: "Carreira", target_quantity: null, target_unit: null, weekly_target_count: null, archived: false },
@@ -31,8 +33,39 @@ const ROTINA: Omit<Habit, "id" | "user_id" | "created_at">[] = [
 
 const createdAt = subDays(new Date(), 40).toISOString();
 
+/** Bloco fixo: tempo ocupado, não hábito. */
+const BLOCOS: Omit<Habit, "id" | "user_id" | "created_at">[] = [
+  {
+    slug: "trabalho",
+    name: "Trabalho",
+    icon: "💼",
+    pixel_icon: "briefcase",
+    color: "stone",
+    kind: "block",
+    frequency_type: "daily",
+    scheduled_time: "09:00:00",
+    end_time: "18:00:00",
+    days_of_week: [1, 2, 3, 4, 5],
+    category: "Trabalho",
+    target_quantity: null,
+    target_unit: null,
+    weekly_target_count: null,
+    archived: false,
+  },
+];
+
 const db: Record<string, Row[]> = {
-  habits: ROTINA.map((h, i) => ({ ...h, id: `habit-${i}`, user_id: USER_ID, created_at: createdAt })),
+  habits: [
+    ...ROTINA.map((h, i) => ({
+      ...h,
+      kind: "habit",
+      end_time: null,
+      id: `habit-${i}`,
+      user_id: USER_ID,
+      created_at: createdAt,
+    })),
+    ...BLOCOS.map((b, i) => ({ ...b, id: `block-${i}`, user_id: USER_ID, created_at: createdAt })),
+  ],
   check_ins: [],
   badges: [],
 };
@@ -46,7 +79,10 @@ function seedHistory() {
     const date = subDays(today, back);
     const iso = toDateKey(date);
     const weekday = ((date.getDay() + 6) % 7) + 1;
-    const due = db.habits.filter((h) => (h.days_of_week as number[]).includes(weekday));
+    // bloco fixo nunca tem check-in
+    const due = db.habits.filter(
+      (h) => h.kind === "habit" && (h.days_of_week as number[]).includes(weekday),
+    );
     const rows = back === 1 ? due.slice(0, Math.max(1, due.length - 3)) : due;
     for (const h of rows) {
       db.check_ins.push({

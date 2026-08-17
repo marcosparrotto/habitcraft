@@ -1,7 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import type { Badge, BadgeMetric, Habit, Milestone } from "../types";
 import { MILESTONE_TIER } from "../types";
-import { useHabits } from "../queries/habits";
+import { useHabits, useTimeBlocks } from "../queries/habits";
 import { useAddCheckIn, useCheckIns, useUndoCheckIn } from "../queries/checkins";
 import { useAwardBadges, useBadges } from "../queries/badges";
 import { computeStats, reachedMilestones } from "../lib/streaks";
@@ -9,8 +9,10 @@ import { formatFull, formatTime, todayKey } from "../lib/dateUtils";
 import {
   adherence as computeAdherence,
   amountOn,
+  blocksForDate,
   buildProgressIndex,
   currentQuest,
+  minutesOf,
   dailyTarget,
   dayStatus,
   flexibleForDate,
@@ -28,6 +30,7 @@ import { FlexibleHabits } from "../components/FlexibleHabits";
 import { SystemStats } from "../components/SystemStats";
 import { SpotlightCard } from "../components/SpotlightCard";
 import { RoutineItemRow } from "../components/RoutineItemRow";
+import { TimeBlockRow } from "../components/TimeBlockRow";
 import { CelebrationOverlay, type Celebration } from "../components/CelebrationOverlay";
 import { Toast, type ToastMessage } from "../components/ui/Toast";
 import { PixelPanel } from "../components/ui/PixelPanel";
@@ -40,6 +43,7 @@ function badgeSetKey(habitId: string, metric: BadgeMetric, milestone: Milestone)
 
 export function Today() {
   const { data: habits, isLoading: habitsLoading } = useHabits();
+  const { data: timeBlocks } = useTimeBlocks();
   const { data: checkIns, isLoading: checkInsLoading } = useCheckIns();
   const { data: badges } = useBadges();
   const addCheckIn = useAddCheckIn();
@@ -83,6 +87,10 @@ export function Today() {
   const spotlight = useMemo(
     () => currentQuest(allHabits, progress, today, now),
     [allHabits, progress, today, now],
+  );
+  const blocksToday = useMemo(
+    () => blocksForDate(timeBlocks ?? [], today),
+    [timeBlocks, today],
   );
   const flexiblePending = flexible.filter((h) => !isDoneOn(progress, h, today));
   const oneTimeHabits = allHabits.filter((h) => h.frequency_type === "one_time");
@@ -318,17 +326,24 @@ export function Today() {
 
           {showList && (
             <div className="mt-4 space-y-2">
-              {timed.map((habit) => (
-                <RoutineItemRow
-                  key={habit.id}
-                  habit={habit}
-                  done={isDoneOn(progress, habit, today)}
-                  onToggle={() => handleToggle(habit)}
-                  disabled={busy}
-                  current={habit.id === spotlight?.id}
-                  late={isLate(habit, progress, today, now)}
-                />
-              ))}
+              {/* blocos entram na mesma linha do tempo, como contexto do dia */}
+              {[...timed, ...blocksToday]
+                .sort((a, b) => minutesOf(a) - minutesOf(b))
+                .map((item) =>
+                  item.kind === "block" ? (
+                    <TimeBlockRow key={item.id} block={item} />
+                  ) : (
+                    <RoutineItemRow
+                      key={item.id}
+                      habit={item}
+                      done={isDoneOn(progress, item, today)}
+                      onToggle={() => handleToggle(item)}
+                      disabled={busy}
+                      current={item.id === spotlight?.id}
+                      late={isLate(item, progress, today, now)}
+                    />
+                  ),
+                )}
               {flexible.length > 0 && (
                 <p className="text-ink-dim text-sm pt-1">
                   + {flexible.length} sem horário, em "a qualquer hora".

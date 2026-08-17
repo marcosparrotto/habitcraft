@@ -48,10 +48,27 @@ export interface Habit {
   days_of_week: WeekdayISO[] | null;
   /** Chave do ícone pixel-art (theme/pixelIcons.ts); null = usa o emoji de `icon`. */
   pixel_icon: string | null;
+  /**
+   * "habit" = hábito com check-in.
+   * "block" = tempo ocupado (ex: trabalho): aparece na grade e nas listas como
+   * contexto, mas não se marca e não entra em nenhuma métrica.
+   */
+  kind: HabitKind;
+  /** Fim do bloco fixo ("HH:MM:SS"); hábito não usa. */
+  end_time: string | null;
 }
 
-/** `slug` fica de fora: é gerenciado pelo seed, não pela tela de cadastro. */
-export type HabitInput = Omit<Habit, "id" | "user_id" | "archived" | "created_at" | "slug">;
+export type HabitKind = "habit" | "block";
+
+/**
+ * `slug` fica de fora: é gerenciado pelo seed, não pela tela de cadastro.
+ * `kind`/`end_time` também: a tela de cadastro só cria hábitos — blocos fixos
+ * vêm do seed.
+ */
+export type HabitInput = Omit<
+  Habit,
+  "id" | "user_id" | "archived" | "created_at" | "slug" | "kind" | "end_time"
+>;
 
 export interface CheckIn {
   id: string;
