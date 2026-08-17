@@ -9,11 +9,28 @@ interface RoutineItemRowProps {
   disabled?: boolean;
   /** Marca o item que está em foco na aba "Hoje". */
   current?: boolean;
+  /** Pendente cujo horário já passou — aviso discreto, sem tom de erro. */
+  late?: boolean;
+  /** Progresso do dia para hábito com meta (ex: 3 de 8 copos). */
+  amount?: number;
+  target?: number;
 }
 
 /** Linha de hábito da rotina — mesma peça nas abas "Hoje" e "Semana". */
-export function RoutineItemRow({ habit, done, onToggle, disabled, current }: RoutineItemRowProps) {
+export function RoutineItemRow({
+  habit,
+  done,
+  onToggle,
+  disabled,
+  current,
+  late,
+  amount,
+  target,
+}: RoutineItemRowProps) {
   const time = formatTime(habit.scheduled_time);
+  // hábito com meta precisa mostrar o parcial, senão tocar e continuar
+  // desmarcado parece que não funcionou
+  const partial = target && target > 1 ? `${amount ?? 0}/${target}` : null;
 
   return (
     <button
@@ -31,7 +48,13 @@ export function RoutineItemRow({ habit, done, onToggle, disabled, current }: Rou
         <span className={`block text-base leading-tight break-words ${done ? "line-through" : ""}`}>
           {habit.name}
         </span>
-        {time && <span className="block text-sm text-ink-dim">{time}</span>}
+        {(time || partial) && (
+          <span className="block text-sm text-ink-dim">
+            {time ?? "a qualquer hora"}
+            {partial && ` · ${partial}${habit.target_unit ? ` ${habit.target_unit}` : ""}`}
+            {late && <span className="text-highlight"> · passou do horário</span>}
+          </span>
+        )}
       </span>
 
       <span

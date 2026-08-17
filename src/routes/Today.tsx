@@ -10,13 +10,21 @@ import {
   adherence as computeAdherence,
   amountOn,
   buildProgressIndex,
+  currentQuest,
   dailyTarget,
   dayStatus,
+  flexibleForDate,
   isDoneOn,
+  isLate,
   missedYesterday,
+  nextByClock,
+  phaseOf,
   systemStreak,
+  timedForDate,
 } from "../lib/routine";
+import { useNow } from "../lib/useNow";
 import { DayNightHero } from "../components/DayNightHero";
+import { FlexibleHabits } from "../components/FlexibleHabits";
 import { SystemStats } from "../components/SystemStats";
 import { SpotlightCard } from "../components/SpotlightCard";
 import { RoutineItemRow } from "../components/RoutineItemRow";
@@ -42,8 +50,12 @@ export function Today() {
   const [toast, setToast] = useState<ToastMessage | null>(null);
   const [showList, setShowList] = useState(false);
   const notificationId = useRef(0);
+  const inFlight = useRef<Set<string>>(new Set());
 
-  const today = useMemo(() => new Date(), []);
+  // o relógio avança sozinho: o destaque do dia depende da hora, e o app fica
+  // aberto enquanto o dia passa
+  const now = useNow();
+  const today = now;
   const allHabits = useMemo(() => habits ?? [], [habits]);
   const progress = useMemo(() => buildProgressIndex(checkIns ?? []), [checkIns]);
 
@@ -64,8 +76,15 @@ export function Today() {
     [allHabits, progress, today],
   );
 
-  const pending = status.scheduled.filter((h) => !isDoneOn(progress, h, today));
-  const spotlight = pending[0] ?? null;
+  // a linha cronológica do dia só tem os hábitos com horário; os livres ficam
+  // na seção "a qualquer hora", mas contam igual para o fechamento do dia
+  const timed = useMemo(() => timedForDate(allHabits, today), [allHabits, today]);
+  const flexible = useMemo(() => flexibleForDate(allHabits, today), [allHabits, today]);
+  const spotlight = useMemo(
+    () => currentQuest(allHabits, progress, today, now),
+    [allHabits, progress, today, now],
+  );
+  const flexiblePending = flexible.filter((h) => !isDoneOn(progress, h, today));
   const oneTimeHabits = allHabits.filter((h) => h.frequency_type === "one_time");
 
   const earnedBadges = useMemo(() => {
@@ -79,20 +98,37 @@ export function Today() {
     return notificationId.current;
   }
 
+  /**
+   * O aviso é sobre o que vem PELO RELÓGIO, não sobre o próximo da fila: quem
+   * pulou a manhã não deve ser avisado às 12h de uma atividade das 06:35.
+   * Sem nada à frente, o toast diz o que sobrou em vez de fingir que o dia acabou.
+   */
   function announceNext(justCompleted: Habit) {
-    const remaining = status.scheduled.filter(
+    const upcoming = nextByClock(allHabits, progress, today, now, justCompleted.id);
+    const leftBehind = status.scheduled.filter(
       (h) => h.id !== justCompleted.id && !isDoneOn(progress, h, today),
-    );
-    const upcoming = remaining[0];
+    ).length;
+
+    if (upcoming) {
+      const time = formatTime(upcoming.scheduled_time);
+      setToast({
+        id: nextId(),
+        title: "PROGRESSO!",
+        text: `Próxima: ${upcoming.name}${time ? ` às ${time}` : ""}`,
+        icon: upcoming.pixel_icon ?? "diamond",
+        emoji: upcoming.icon,
+      });
+      return;
+    }
 
     setToast({
       id: nextId(),
-      title: upcoming ? "PROGRESSO!" : "DIA COMPLETO!",
-      text: upcoming
-        ? `Próxima: ${upcoming.name}${formatTime(upcoming.scheduled_time) ? ` às ${formatTime(upcoming.scheduled_time)}` : ""}`
-        : "Rotina de hoje fechada. Constância > perfeição.",
-      icon: upcoming ? (upcoming.pixel_icon ?? "diamond") : "diamond",
-      emoji: upcoming?.icon,
+      title: leftBehind === 0 ? "DIA COMPLETO!" : "PROGRESSO!",
+      text:
+        leftBehind === 0
+          ? "Rotina de hoje fechada. Constância > perfeição."
+          : `Nada mais marcado para hoje — ${leftBehind} ${leftBehind === 1 ? "ficou" : "ficaram"} para trás, dá pra fechar ainda.`,
+      icon: "diamond",
     });
   }
 
@@ -101,9 +137,17 @@ export function Today() {
     const before = amountOn(progress, habit, today);
     const willComplete = before + 1 >= target;
 
+    // dois toques rápidos no mesmo hábito criariam dois check-ins para o mesmo
+    // dia — o segundo chega antes de `progress` atualizar. Hábito binário já
+    // concluído também não aceita novo registro.
+    if (inFlight.current.has(habit.id)) return;
+    if (target === 1 && before > 0) return;
+    inFlight.current.add(habit.id);
+
     addCheckIn.mutate(
       { habitId: habit.id },
       {
+        onSettled: () => inFlight.current.delete(habit.id),
         onSuccess: (newCheckIn) => {
           const stats = computeStats(habit, [...(checkIns ?? []), newCheckIn], today);
 
@@ -132,7 +176,11 @@ export function Today() {
 
   function handleToggle(habit: Habit) {
     if (isDoneOn(progress, habit, today)) {
-      undoCheckIn.mutate({ habitId: habit.id, date: todayKey() });
+      undoCheckIn.mutate({
+        habitId: habit.id,
+        date: todayKey(),
+        scope: habit.frequency_type === "multiple_daily" ? "last" : "day",
+      });
     } else {
       handleComplete(habit);
     }
@@ -209,14 +257,22 @@ export function Today() {
           onComplete={() => handleComplete(spotlight)}
           onSkipToList={() => setShowList(true)}
           disabled={busy}
-          // posição cronológica do item, não a contagem de concluídos — o
-          // usuário pode marcar fora de ordem pela lista
-          position={status.scheduled.findIndex((h) => h.id === spotlight.id) + 1}
-          total={status.total}
+          phase={phaseOf(spotlight, now)}
         />
       )}
 
-      {!spotlight && status.total > 0 && (
+      {/* sem atividade com horário pendente, mas ainda falta algo livre */}
+      {!spotlight && !status.complete && status.total > 0 && (
+        <PixelPanel className="text-center py-6">
+          <p className="font-pixel text-[0.7rem] text-accent mb-2">Falta pouco</p>
+          <p className="text-ink-dim">
+            Os horários de hoje estão fechados. Ainda dá pra bater{" "}
+            {flexiblePending.map((h) => h.name).join(" e ")}.
+          </p>
+        </PixelPanel>
+      )}
+
+      {status.complete && status.total > 0 && (
         <PixelPanel className="text-center py-8">
           <PixelIcon name="diamond" className="w-12 h-12 mx-auto mb-4" />
           <p className="font-pixel text-xs text-accent mb-2">Dia completo!</p>
@@ -226,6 +282,21 @@ export function Today() {
           </p>
         </PixelPanel>
       )}
+
+      <FlexibleHabits
+        habits={flexible}
+        progress={progress}
+        date={today}
+        onAdd={handleComplete}
+        onRemove={(habit) =>
+          undoCheckIn.mutate({
+            habitId: habit.id,
+            date: todayKey(),
+            scope: habit.frequency_type === "multiple_daily" ? "last" : "day",
+          })
+        }
+        disabled={busy}
+      />
 
       {status.total > 0 && (
         <PixelPanel>
@@ -247,7 +318,7 @@ export function Today() {
 
           {showList && (
             <div className="mt-4 space-y-2">
-              {status.scheduled.map((habit) => (
+              {timed.map((habit) => (
                 <RoutineItemRow
                   key={habit.id}
                   habit={habit}
@@ -255,8 +326,14 @@ export function Today() {
                   onToggle={() => handleToggle(habit)}
                   disabled={busy}
                   current={habit.id === spotlight?.id}
+                  late={isLate(habit, progress, today, now)}
                 />
               ))}
+              {flexible.length > 0 && (
+                <p className="text-ink-dim text-sm pt-1">
+                  + {flexible.length} sem horário, em "a qualquer hora".
+                </p>
+              )}
             </div>
           )}
         </PixelPanel>

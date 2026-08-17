@@ -52,16 +52,39 @@ export function useAddCheckIn() {
   });
 }
 
-/** Undo: removes the most recent check-in of the given day (default today). */
+export interface UndoVars extends Omit<CheckInVars, "quantity"> {
+  /**
+   * "day"  — apaga todos os check-ins do hábito naquela data. É o certo para
+   *          hábito binário: desmarcar significa "não fiz hoje", e qualquer
+   *          registro duplicado sairia junto em vez de continuar contando.
+   * "last" — remove só a última unidade. Para hábito com meta diária
+   *          (ex: 8 copos), onde desmarcar é decrementar.
+   */
+  scope?: "day" | "last";
+}
+
+/** Undo: desfaz o check-in do dia (default hoje). */
 export function useUndoCheckIn() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ habitId, date }: Omit<CheckInVars, "quantity">) => {
+    mutationFn: async ({ habitId, date, scope = "day" }: UndoVars) => {
+      const checkDate = date ?? todayKey();
+
+      if (scope === "day") {
+        const { error } = await supabase
+          .from("check_ins")
+          .delete()
+          .eq("habit_id", habitId)
+          .eq("check_date", checkDate);
+        if (error) throw error;
+        return;
+      }
+
       const { data: latest, error: findError } = await supabase
         .from("check_ins")
         .select("id")
         .eq("habit_id", habitId)
-        .eq("check_date", date ?? todayKey())
+        .eq("check_date", checkDate)
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();

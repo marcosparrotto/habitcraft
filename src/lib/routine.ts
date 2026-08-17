@@ -44,6 +44,100 @@ export function habitsForDate(habits: Habit[], date: Date): Habit[] {
     .sort((a, b) => minutesOf(a) - minutesOf(b) || a.name.localeCompare(b.name, "pt-BR"));
 }
 
+/** Tem hora marcada? Só esses entram na linha cronológica do dia. */
+export function isTimed(habit: Habit): boolean {
+  return !!habit.scheduled_time;
+}
+
+/** Hábitos com horário — a "quest line" do dia. */
+export function timedForDate(habits: Habit[], date: Date): Habit[] {
+  return habitsForDate(habits, date).filter(isTimed);
+}
+
+/** Hábitos sem horário (ex: beber água) — feitos a qualquer hora. */
+export function flexibleForDate(habits: Habit[], date: Date): Habit[] {
+  return habitsForDate(habits, date).filter((h) => !isTimed(h));
+}
+
+/** Minutos desde a meia-noite do relógio do dispositivo. */
+export function minutesNow(now: Date = new Date()): number {
+  return now.getHours() * 60 + now.getMinutes();
+}
+
+/**
+ * Pendente que passou da janela de tolerância. Usa o mesmo limite do destaque:
+ * enquanto o card diz "agora", a linha da lista não pode dizer "atrasada".
+ */
+export function isLate(habit: Habit, index: ProgressIndex, date: Date, now: Date): boolean {
+  return isTimed(habit) && !isDoneOn(index, habit, date) && phaseOf(habit, now) === "late";
+}
+
+/** Em que momento do dia a atividade está, em relação ao relógio. */
+export function phaseOf(habit: Habit, now: Date = new Date()): "now" | "next" | "late" {
+  const diff = minutesNow(now) - minutesOf(habit);
+  if (diff < 0) return "next";
+  return diff <= GRACE_MINUTES ? "now" : "late";
+}
+
+/**
+ * Janela em que uma atividade vencida ainda conta como "acontecendo agora".
+ * Passado isso ela vira atrasada e sai do destaque — dá pra recuperar pela
+ * lista do dia, mas não sequestra o card.
+ */
+export const GRACE_MINUTES = 90;
+
+/**
+ * A atividade da vez, pelo relógio:
+ *   1. a vencida há pouco (dentro da janela de tolerância) — é o que está
+ *      acontecendo agora;
+ *   2. senão, a próxima futura;
+ *   3. senão, a última atrasada — não há mais nada à frente, então o card
+ *      oferece o que ainda dá pra recuperar.
+ *
+ * Sem isso, quem pula a rotina da manhã fica às 20h olhando para o card do
+ * devocional das 06:35 — uma atividade que não é o "agora" de ninguém. E a
+ * regra 2 mantém o destaque coerente com o aviso de "próxima": os dois passam
+ * a falar da mesma atividade.
+ */
+export function currentQuest(
+  habits: Habit[],
+  index: ProgressIndex,
+  date: Date,
+  now: Date = new Date(),
+): Habit | null {
+  const pending = timedForDate(habits, date).filter((h) => !isDoneOn(index, h, date));
+  if (pending.length === 0) return null;
+
+  const minutes = minutesNow(now);
+  let lastOverdue: Habit | null = null;
+  let recentOverdue: Habit | null = null;
+
+  for (const habit of pending) {
+    if (minutesOf(habit) > minutes) break;
+    lastOverdue = habit;
+    if (minutes - minutesOf(habit) <= GRACE_MINUTES) recentOverdue = habit;
+  }
+
+  if (recentOverdue) return recentOverdue;
+  return pending.find((h) => minutesOf(h) > minutes) ?? lastOverdue;
+}
+
+/** Próxima pendente com horário ainda à frente no relógio. */
+export function nextByClock(
+  habits: Habit[],
+  index: ProgressIndex,
+  date: Date,
+  now: Date = new Date(),
+  excludeHabitId?: string,
+): Habit | null {
+  const minutes = minutesNow(now);
+  return (
+    timedForDate(habits, date).find(
+      (h) => h.id !== excludeHabitId && !isDoneOn(index, h, date) && minutesOf(h) > minutes,
+    ) ?? null
+  );
+}
+
 /** Soma de check-ins por `habitId:data`, calculada uma vez e reaproveitada. */
 export type ProgressIndex = Map<string, number>;
 

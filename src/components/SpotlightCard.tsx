@@ -13,10 +13,20 @@ interface SpotlightCardProps {
   onComplete: () => void;
   onSkipToList: () => void;
   disabled?: boolean;
-  /** Posição na sequência do dia, ex: 3 de 8. */
-  position: number;
-  total: number;
+  /**
+   * Em que momento esta atividade está:
+   *   now  — está acontecendo agora (dentro da janela do horário)
+   *   next — ainda vai acontecer
+   *   late — passou do horário e continua pendente
+   */
+  phase: "now" | "next" | "late";
 }
+
+const PHASE_LABEL: Record<SpotlightCardProps["phase"], string> = {
+  now: "AGORA",
+  next: "PRÓXIMA ATIVIDADE",
+  late: "AINDA PENDENTE",
+};
 
 /** "Quest atual": o próximo hábito pendente, em destaque. */
 export function SpotlightCard({
@@ -26,17 +36,17 @@ export function SpotlightCard({
   onComplete,
   onSkipToList,
   disabled,
-  position,
-  total,
+  phase,
 }: SpotlightCardProps) {
   const palette = BLOCK_COLOR_CLASSES[habit.color];
   const time = formatTime(habit.scheduled_time);
+  const late = phase === "late";
 
   return (
     <PixelPanel className="text-center">
-      <p className="font-pixel text-[0.6rem] text-ink-dim mb-4">
-        AGORA · {position} de {total}
-      </p>
+      {/* sem contador aqui: número ao lado do nome era lido como progresso.
+          Quem conta concluídas é a barra "Dia inteiro". */}
+      <p className="font-pixel text-[0.6rem] text-ink-dim mb-4">{PHASE_LABEL[phase]}</p>
 
       <div
         className={`w-24 h-24 mx-auto mb-4 flex items-center justify-center border-4 border-edge ${palette.bg}`}
@@ -46,7 +56,12 @@ export function SpotlightCard({
 
       <h2 className="font-pixel text-xs leading-relaxed mb-2 break-words">{habit.name}</h2>
 
-      {time && <p className="text-highlight text-lg mb-1">{time}</p>}
+      {time && (
+        <p className="text-highlight text-lg mb-1">
+          {time}
+          {late && <span className="text-ink-dim text-base"> · passou do horário</span>}
+        </p>
+      )}
 
       {target > 1 && (
         <p className="text-ink-dim text-base mb-1">

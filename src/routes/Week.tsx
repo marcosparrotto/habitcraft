@@ -6,7 +6,9 @@ import { useHabits } from "../queries/habits";
 import { useAddCheckIn, useCheckIns, useUndoCheckIn } from "../queries/checkins";
 import { toDateKey } from "../lib/dateUtils";
 import {
+  amountOn,
   buildProgressIndex,
+  dailyTarget,
   dayStatus,
   habitsForDate,
   isDoneOn,
@@ -64,8 +66,15 @@ export function Week() {
 
   function toggle(habit: Habit, date: Date) {
     const key = toDateKey(date);
+    // não se marca o que ainda não aconteceu: um check-in no futuro entraria
+    // como dia cumprido e inflaria sequência e aderência
+    if (key > toDateKey(new Date())) return;
     if (isDoneOn(progress, habit, date)) {
-      undoCheckIn.mutate({ habitId: habit.id, date: key });
+      undoCheckIn.mutate({
+        habitId: habit.id,
+        date: key,
+        scope: habit.frequency_type === "multiple_daily" ? "last" : "day",
+      });
     } else {
       addCheckIn.mutate({ habitId: habit.id, date: key });
     }
@@ -144,7 +153,7 @@ export function Week() {
 
           {isFuture && selectedStatus.total > 0 && (
             <p className="text-ink-dim text-sm mb-3">
-              Dia futuro — dá pra marcar, mas o normal é fechar na aba "Hoje".
+              Dia futuro — só o planejado. Dá pra marcar quando chegar o dia.
             </p>
           )}
 
@@ -155,7 +164,9 @@ export function Week() {
                 habit={habit}
                 done={isDoneOn(progress, habit, selected)}
                 onToggle={() => toggle(habit, selected)}
-                disabled={busy}
+                disabled={busy || isFuture}
+                amount={amountOn(progress, habit, selected)}
+                target={dailyTarget(habit)}
               />
             ))}
           </div>
