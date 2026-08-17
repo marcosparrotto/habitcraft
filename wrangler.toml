@@ -1,0 +1,14 @@
+# Publicação na Cloudflare (Workers com assets estáticos).
+# Não há código de Worker: o projeto é um SPA, então só se declara a pasta
+# construída. `single-page-application` faz qualquer rota desconhecida devolver
+# 200 com index.html, que é o que o react-router precisa.
+#
+# Os arquivos public/_headers e public/_redirects são copiados para dist/ pelo
+# Vite e lidos daqui — é de lá que saem CSP e demais cabeçalhos de segurança.
+
+name = "habitcraft"
+compatibility_date = "2026-08-17"
+
+[assets]
+directory = "./dist"
+not_found_handling = "single-page-application"
