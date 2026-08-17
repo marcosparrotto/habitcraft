@@ -29,8 +29,8 @@ import {
   computeStats,
   isUnitComplete,
   progressByUnit,
-  unitTarget,
 } from "../lib/streaks";
+import { amountOn, buildProgressIndex, dailyTarget, dayStatus, occursOn } from "../lib/routine";
 import { toDateKey } from "../lib/dateUtils";
 import { PixelPanel } from "../components/ui/PixelPanel";
 import { PixelButton } from "../components/ui/PixelButton";
@@ -113,24 +113,42 @@ export function History() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [habits, checkIns, period, habitId]);
 
+  /**
+   * Intensidade por dia: 1 = dia fechado, entre 0 e 1 = parcial.
+   *
+   * Na visão geral é a proporção de hábitos concluídos sobre os agendados
+   * daquele dia — a mesma definição que a sequência usa. (Antes era o MÁXIMO
+   * entre os hábitos, então um único hábito concluído pintava o dia inteiro
+   * como cumprido.) Dias sem nada agendado ficam de fora do mapa.
+   */
   const heatmapValues = useMemo(() => {
     const map = new Map<string, number>();
-    if (!checkIns) return map;
-    const target = selectedHabit ? [selectedHabit] : (habits ?? []);
-    if (target.length === 0) return map;
+    if (!checkIns || !habits) return map;
+    const index = buildProgressIndex(checkIns);
 
-    for (const habit of target) {
-      if (habit.frequency_type === "weekly_x" || habit.frequency_type === "one_time") continue;
-      const totals = progressByUnit(habit, checkIns);
-      const goal = unitTarget(habit);
-      for (const [key, amount] of totals) {
-        const ratio = Math.min(1, amount / goal);
-        map.set(key, Math.max(map.get(key) ?? 0, ratio));
+    for (let d = start; d <= end; d = addDays(d, 1)) {
+      const key = toDateKey(d);
+
+      if (selectedHabit) {
+        if (!occursOn(selectedHabit, d)) continue;
+        // hábito semanal não se julga por dia: marcou naquele dia, conta o dia
+        if (selectedHabit.frequency_type === "weekly_x") {
+          const amount = amountOn(index, selectedHabit, d);
+          if (amount > 0) map.set(key, 1);
+          continue;
+        }
+        const amount = amountOn(index, selectedHabit, d);
+        map.set(key, Math.min(1, amount / dailyTarget(selectedHabit)));
+        continue;
       }
+
+      const status = dayStatus(habits, index, d);
+      if (status.empty) continue;
+      map.set(key, status.done / status.total);
     }
     return map;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [habits, checkIns, habitId]);
+  }, [habits, checkIns, habitId, period]);
 
   const selectedStats =
     selectedHabit && checkIns ? computeStats(selectedHabit, checkIns, today) : null;
