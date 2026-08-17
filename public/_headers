@@ -1,0 +1,18 @@
+# Cabeçalhos de segurança. Lido automaticamente por Netlify e Cloudflare Pages
+# (mesmo formato do _redirects que já existe aqui).
+#
+# connect-src usa curinga *.supabase.co para não fixar o ref do projeto no
+# repositório; dá pra apertar trocando pela origem exata do seu projeto.
+# style-src precisa de 'unsafe-inline' porque a UI usa atributos style= para
+# interpolar as cores do ciclo dia/noite.
+
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co; base-uri 'none'; form-action 'self'; frame-ancestors 'none'; object-src 'none'
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: geolocation=(), camera=(), microphone=(), payment=(), usb=(), interest-cohort=()
+
+# assets versionados por hash podem ser cacheados agressivamente
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable

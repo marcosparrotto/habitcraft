@@ -47,6 +47,44 @@ No SQL Editor, nesta ordem:
    Idempotente: rodar de novo atualiza em vez de duplicar. Pega o primeiro usuário de
    `auth.users`, então crie o usuário antes.
 
+## Publicar
+
+O app é estático (HTML/CSS/JS) e fala direto com o Supabase, então qualquer host
+de site estático serve. **Netlify** e **Cloudflare Pages** têm plano gratuito,
+aceitam repositório privado e leem os arquivos `public/_redirects` e
+`public/_headers` que já estão aqui.
+
+1. Conecte o repositório no host escolhido.
+2. Build command: `npm run build` · Publish directory: `dist`
+3. Nas variáveis de ambiente do host, defina `VITE_SUPABASE_URL` e
+   `VITE_SUPABASE_ANON_KEY` (mesmos valores do `.env.local`).
+4. No Supabase, em **Authentication > URL Configuration**, ponha a URL publicada
+   como *Site URL*.
+
+A partir daí cada `git push` na `main` publica sozinho, e o endereço abre em
+qualquer aparelho — celular, tablet, desktop.
+
+> GitHub Pages não serve aqui: publicar a partir de repositório privado exige
+> plano pago.
+
+### Segurança
+
+A anon key vai embutida no bundle — isso é o desenho do Supabase, e a proteção
+real é a RLS, que restringe cada linha ao `auth.uid()` dono dela. Duas
+consequências práticas:
+
+- **Desligue o cadastro público** em *Authentication > Providers > Email >
+  "Allow new users to sign up"*. O app não tem tela de cadastro, mas o endpoint
+  fica aberto e qualquer um com a URL poderia criar contas no seu projeto.
+- Rode [`supabase/004_seguranca.sql`](supabase/004_seguranca.sql): as políticas
+  passam a exigir que o `habit_id` de um check-in ou medalha pertença a quem
+  está gravando, não só que o `user_id` bata.
+
+`public/_headers` aplica CSP, `frame-ancestors 'none'` (anti-clickjacking),
+`nosniff` e `Referrer-Policy`. O script que evita o piscar de tema mora em
+`public/theme-boot.js` justamente para o CSP poder usar `script-src 'self'` sem
+liberar `unsafe-inline`.
+
 ### Sandbox de UI (opcional)
 
 `sandbox.html` roda o app com um Supabase falso em memória, sem login, pra mexer em
