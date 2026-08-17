@@ -50,20 +50,27 @@ No SQL Editor, nesta ordem:
 ## Publicar
 
 O app é estático (HTML/CSS/JS) e fala direto com o Supabase, então qualquer host
-de site estático serve. **Netlify** e **Cloudflare Pages** têm plano gratuito,
-aceitam repositório privado e leem os arquivos `public/_redirects` e
-`public/_headers` que já estão aqui.
+de site estático serve. Está publicado na **Cloudflare** (Workers com assets
+estáticos), configurado por [`wrangler.toml`](wrangler.toml).
 
-1. Conecte o repositório no host escolhido.
-2. Build command: `npm run build` · Publish directory: `dist`
-3. Nas variáveis de ambiente do host, defina `VITE_SUPABASE_URL` e
-   `VITE_SUPABASE_ANON_KEY` (mesmos valores do `.env.local`).
+1. No painel da Cloudflare: **Build > Compute > Workers & Pages**, importe o
+   repositório do GitHub.
+2. Build command `npm run build` · Deploy command `npx wrangler deploy`.
+3. Em **Settings > Build > Build variables**, defina `VITE_SUPABASE_URL` e
+   `VITE_SUPABASE_ANON_KEY` (mesmos valores do `.env.local`). São variáveis de
+   *build*, não de runtime: o Vite grava esses valores dentro do JS na
+   compilação, então sem elas o app sobe quebrado.
 4. No Supabase, em **Authentication > URL Configuration**, ponha a URL publicada
    como *Site URL*.
 
 A partir daí cada `git push` na `main` publica sozinho, e o endereço abre em
 qualquer aparelho — celular, tablet, desktop.
 
+> Não existe `public/_redirects`: a regra `/* -> /index.html 200` do Netlify é
+> rejeitada pelo Cloudflare como loop infinito. Quem faz o roteamento do SPA é
+> `not_found_handling = "single-page-application"` no `wrangler.toml`. Se um dia
+> mudar para Netlify, o arquivo precisa voltar.
+>
 > GitHub Pages não serve aqui: publicar a partir de repositório privado exige
 > plano pago.
 

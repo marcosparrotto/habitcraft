@@ -3,8 +3,13 @@
 # construída. `single-page-application` faz qualquer rota desconhecida devolver
 # 200 com index.html, que é o que o react-router precisa.
 #
-# Os arquivos public/_headers e public/_redirects são copiados para dist/ pelo
-# Vite e lidos daqui — é de lá que saem CSP e demais cabeçalhos de segurança.
+# O arquivo public/_headers é copiado para dist/ pelo Vite e lido daqui — é de
+# lá que saem CSP e demais cabeçalhos de segurança.
+#
+# Não existe _redirects de propósito: a regra `/* -> /index.html 200`, padrão do
+# Netlify, é rejeitada pelo Cloudflare como loop infinito, porque ele já remove
+# `.html` e `/index` sozinho. Quem cuida do roteamento do SPA aqui é o
+# not_found_handling abaixo.
 
 name = "habitcraft"
 compatibility_date = "2026-08-17"
