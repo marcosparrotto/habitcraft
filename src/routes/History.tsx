@@ -1,10 +1,6 @@
 import { useMemo, useState } from "react";
 import {
-  Bar,
-  BarChart,
   CartesianGrid,
-  Cell,
-  Legend,
   Line,
   LineChart,
   ResponsiveContainer,
@@ -73,22 +69,6 @@ export function History() {
   const { start, end } = periodRange(period, today);
 
   const selectedHabit = habits?.find((h) => h.id === habitId) ?? null;
-
-  const perHabitRates = useMemo(() => {
-    if (!habits || !checkIns) return [];
-    return habits.map((habit) => {
-      const { completed, expected, rate } = completionRate(habit, checkIns, start, end);
-      return {
-        name: habit.name,
-        icon: habit.icon,
-        color: habit.color,
-        completed,
-        missed: Math.max(0, expected - completed),
-        rate: Math.round(rate),
-      };
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [habits, checkIns, period]);
 
   const trendData = useMemo(() => {
     if (!habits || !checkIns) return [];
@@ -306,32 +286,6 @@ export function History() {
         </ResponsiveContainer>
       </PixelPanel>
 
-      <PixelPanel>
-        <h2 className="font-pixel text-xs mb-4">Cumprido vs. falhado por hábito</h2>
-        <ResponsiveContainer width="100%" height={Math.max(200, perHabitRates.length * 48)}>
-          <BarChart data={perHabitRates} layout="vertical" margin={{ left: 12 }}>
-            <CartesianGrid stroke="#3c3c3c" strokeDasharray="4 4" />
-            <XAxis type="number" stroke="#a9a9a9" tick={{ fontSize: 12 }} />
-            <YAxis
-              type="category"
-              dataKey="name"
-              stroke="#a9a9a9"
-              width={110}
-              tick={{ fontSize: 12 }}
-            />
-            <Tooltip
-              contentStyle={{ background: "#2b2b2b", border: "4px solid #17131f", color: "#fff" }}
-            />
-            <Legend wrapperStyle={{ fontSize: 12 }} />
-            <Bar dataKey="completed" name="cumprido" stackId="a" fill="#5ea62e">
-              {perHabitRates.map((_, i) => (
-                <Cell key={i} />
-              ))}
-            </Bar>
-            <Bar dataKey="missed" name="falhado" stackId="a" fill="#e0342d" />
-          </BarChart>
-        </ResponsiveContainer>
-      </PixelPanel>
     </div>
   );
 }
