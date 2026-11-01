@@ -79,8 +79,14 @@ create index if not exists check_ins_habit_date_idx on check_ins (habit_id, chec
 alter table check_ins enable row level security;
 
 create policy "check_ins_select_own" on check_ins for select using (auth.uid() = user_id);
-create policy "check_ins_insert_own" on check_ins for insert with check (auth.uid() = user_id);
-create policy "check_ins_update_own" on check_ins for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "check_ins_insert_own" on check_ins for insert with check (
+  auth.uid() = user_id
+  and exists (select 1 from habits h where h.id = check_ins.habit_id and h.user_id = auth.uid())
+);
+create policy "check_ins_update_own" on check_ins for update using (auth.uid() = user_id) with check (
+  auth.uid() = user_id
+  and exists (select 1 from habits h where h.id = check_ins.habit_id and h.user_id = auth.uid())
+);
 create policy "check_ins_delete_own" on check_ins for delete using (auth.uid() = user_id);
 
 -- ============ badges ============
@@ -97,7 +103,10 @@ create table if not exists badges (
 alter table badges enable row level security;
 
 create policy "badges_select_own" on badges for select using (auth.uid() = user_id);
-create policy "badges_insert_own" on badges for insert with check (auth.uid() = user_id);
+create policy "badges_insert_own" on badges for insert with check (
+  auth.uid() = user_id
+  and exists (select 1 from habits h where h.id = badges.habit_id and h.user_id = auth.uid())
+);
 create policy "badges_delete_own" on badges for delete using (auth.uid() = user_id);
 
 -- ============ setup do usuário único ============

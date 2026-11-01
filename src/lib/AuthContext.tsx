@@ -1,4 +1,5 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "./supabaseClient";
 
@@ -12,21 +13,34 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const queryClient = useQueryClient();
+  const userId = useRef<string | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
+    let active = true;
+    function applySession(next: Session | null) {
+      if (!active) return;
+      if (userId.current !== (next?.user.id ?? null)) {
+        // clear() also cancels active queries before the next account renders.
+        queryClient.clear();
+        userId.current = next?.user.id ?? null;
+      }
+      setSession(next);
       setLoading(false);
-    });
+    }
+    // INITIAL_SESSION is emitted by the subscription, avoiding a competing getSession().
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
-      setSession(newSession);
+      applySession(newSession);
     });
 
-    return () => listener.subscription.unsubscribe();
-  }, []);
+    return () => {
+      active = false;
+      listener.subscription.unsubscribe();
+    };
+  }, [queryClient]);
 
   async function signIn(email: string, password: string) {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -34,7 +48,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function signOut() {
-    await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
+    queryClient.clear();
+    setSession(null);
   }
 
   return (

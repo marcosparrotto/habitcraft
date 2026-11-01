@@ -1,3 +1,4 @@
+import { useAuth } from "../lib/AuthContext";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../lib/supabaseClient";
 import type { CheckIn } from "../types";
@@ -7,12 +8,15 @@ export const checkInsKey = ["check_ins"];
 
 /** All check-ins — the personal-use data volume is small enough to compute stats client-side. */
 export function useCheckIns() {
+  const { session } = useAuth();
   return useQuery({
-    queryKey: checkInsKey,
-    queryFn: async (): Promise<CheckIn[]> => {
+    queryKey: [...checkInsKey, session?.user.id],
+    enabled: !!session,
+    queryFn: async ({ signal }): Promise<CheckIn[]> => {
       const { data, error } = await supabase
         .from("check_ins")
         .select("*")
+        .abortSignal(signal)
         .order("check_date", { ascending: true });
       if (error) throw error;
       return data as CheckIn[];

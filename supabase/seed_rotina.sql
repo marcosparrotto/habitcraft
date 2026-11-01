@@ -1,17 +1,8 @@
 -- HabitCraft — seed da rotina semanal.
--- Fonte de verdade: DAY_TEMPLATES do painel rotina-semanal.html.
--- Rode no SQL Editor do Supabase DEPOIS de schema.sql (+ 002_rotina.sql, se banco antigo).
--- Idempotente: rodar de novo atualiza as linhas existentes em vez de duplicar.
+-- Dados fictícios para demonstração; não representam a rotina do autor.
+-- Opcional, para banco novo: execute após schema.sql e a criação do usuário.
+-- Idempotente: atualiza os exemplos existentes pelo slug.
 --
--- Os 3 perfis de dia (ing / academia / weekend) compartilham ids, então viram hábitos
--- únicos com days_of_week = união dos dias em que aparecem:
---   ing      = segunda (1) e quarta (3)
---   academia = terça (2), quinta (4) e sexta (5)
---   weekend  = sábado (6) e domingo (7)
---
--- Ajustes posteriores ao painel original:
---   academia = todo dia útil (1-5) às 12:00, não só ter/qui/sex às 12:30
---   agua     = hábito sem horário, meta de 8 copos (novo)
 
 with alvo as (
   -- conta única: pega o primeiro usuário do projeto.
@@ -23,15 +14,15 @@ rotina(
   frequency_type, target_quantity, target_unit
 ) as (
   values
-    ('devocional',     'Devocional (2-3 capítulos)',      '🙏', 'book_gold',   'gold',      time '06:35', array[1,2,3,4,5,6,7]::smallint[], 'Espiritual', 'daily',          null::integer, null::text),
-    ('passeio_manha',  'Passeio manhã + podcast técnico', '🐾', 'bone',        'grass',     time '06:50', array[1,2,3,4,5,6,7]::smallint[], 'Movimento',  'daily',          null,          null),
-    ('estudo_cert',    'Estudo de certificação',          '📚', 'book_purple', 'diamond',   time '07:45', array[1,2,3,4,5]::smallint[],     'Carreira',   'daily',          null,          null),
-    ('ingles_revisao', 'Revisão leve de inglês',          '✍️', 'note',        'copper',    time '08:10', array[1,3]::smallint[],           'Idiomas',    'daily',          null,          null),
-    ('academia',       'Academia (no almoço)',            '🏋️', 'dumbbell',    'redstone',  time '12:00', array[1,2,3,4,5]::smallint[],     'Movimento',  'daily',          null,          null),
-    ('ingles_aula',    'Aula de inglês',                  '🧠', 'note',        'copper',    time '18:15', array[1,3]::smallint[],           'Idiomas',    'daily',          null,          null),
-    ('passeio_noite',  'Passeio noturno',                 '🐾', 'bone',        'emerald',   time '19:30', array[1,2,3,4,5,6,7]::smallint[], 'Movimento',  'daily',          null,          null),
-    ('leitura',        'Leitura de ficção',               '📖', 'book_red',    'wood',      time '22:30', array[1,2,3,4,5,6,7]::smallint[], 'Lazer',      'daily',          null,          null),
-    ('dormir',         'Dormir até 23h',                  '😴', 'bed',         'netherite', time '23:00', array[1,2,3,4,5,6,7]::smallint[], 'Sono',       'daily',          null,          null),
+    ('planejar_dia',     'Planejar o dia',      '🙏', 'book_gold',   'gold',      time '07:00', array[1,2,3,4,5,6,7]::smallint[], 'Organização', 'daily',          null::integer, null::text),
+    ('alongamento',  'Alongamento', '🐾', 'bone',        'grass',     time '07:15', array[1,2,3,4,5,6,7]::smallint[], 'Movimento',  'daily',          null,          null),
+    ('estudo',    'Estudar um tema novo',          '📚', 'book_purple', 'diamond',   time '08:00', array[1,2,3,4,5]::smallint[],     'Carreira',   'daily',          null,          null),
+    ('revisao', 'Revisar anotações',          '✍️', 'note',        'copper',    time '08:30', array[1,3]::smallint[],           'Idiomas',    'daily',          null,          null),
+    ('exercicio',       'Exercício físico',            '🏋️', 'dumbbell',    'redstone',  time '12:30', array[1,2,3,4,5]::smallint[],     'Movimento',  'daily',          null,          null),
+    ('curso',    'Curso online',                  '🧠', 'note',        'copper',    time '18:30', array[1,3]::smallint[],           'Idiomas',    'daily',          null,          null),
+    ('caminhada',  'Caminhada',                 '🐾', 'bone',        'emerald',   time '20:00', array[1,2,3,4,5,6,7]::smallint[], 'Movimento',  'daily',          null,          null),
+    ('leitura',        'Leitura de ficção',               '📖', 'book_red',    'wood',      time '21:30', array[1,2,3,4,5,6,7]::smallint[], 'Lazer',      'daily',          null,          null),
+    ('dormir',         'Preparar para dormir',                  '😴', 'bed',         'netherite', time '22:00', array[1,2,3,4,5,6,7]::smallint[], 'Sono',       'daily',          null,          null),
     -- sem horário: aparece na seção "a qualquer hora" da aba Hoje. Só fecha o
     -- dia com a meta cheia, mas o check-in é de um copo por vez.
     ('agua',           'Beber água',                      '💧', null,          'diamond',   null,         array[1,2,3,4,5,6,7]::smallint[], 'Saúde',      'multiple_daily', 8,             'copos')
@@ -69,7 +60,7 @@ insert into habits (
 )
 select
   u.id, 'trabalho', 'Trabalho', '💼', 'briefcase', 'stone', 'block',
-  'daily', time '09:00', time '18:00', array[1,2,3,4,5]::smallint[], 'Trabalho', false
+  'daily', time '10:00', time '17:00', array[1,2,3,4,5]::smallint[], 'Trabalho', false
 from (select id from auth.users order by created_at asc limit 1) u
 on conflict (user_id, slug) do update set
   name           = excluded.name,

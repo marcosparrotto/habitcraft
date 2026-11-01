@@ -1,3 +1,4 @@
+import { useAuth } from "../lib/AuthContext";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../lib/supabaseClient";
 import type { Habit, HabitInput } from "../types";
@@ -11,14 +12,17 @@ export const timeBlocksKey = ["habits", "blocks"];
  * aderência, XP ou medalhas — quem quiser bloco pede explicitamente.
  */
 export function useHabits() {
+  const { session } = useAuth();
   return useQuery({
-    queryKey: habitsKey,
-    queryFn: async (): Promise<Habit[]> => {
+    queryKey: [...habitsKey, session?.user.id],
+    enabled: !!session,
+    queryFn: async ({ signal }): Promise<Habit[]> => {
       const { data, error } = await supabase
         .from("habits")
         .select("*")
         .eq("archived", false)
         .eq("kind", "habit")
+        .abortSignal(signal)
         .order("created_at", { ascending: true });
       if (error) throw error;
       return data as Habit[];
@@ -28,14 +32,17 @@ export function useHabits() {
 
 /** Blocos fixos (tempo ocupado) — usados só como contexto visual. */
 export function useTimeBlocks() {
+  const { session } = useAuth();
   return useQuery({
-    queryKey: timeBlocksKey,
-    queryFn: async (): Promise<Habit[]> => {
+    queryKey: [...timeBlocksKey, session?.user.id],
+    enabled: !!session,
+    queryFn: async ({ signal }): Promise<Habit[]> => {
       const { data, error } = await supabase
         .from("habits")
         .select("*")
         .eq("archived", false)
         .eq("kind", "block")
+        .abortSignal(signal)
         .order("scheduled_time", { ascending: true });
       if (error) throw error;
       return data as Habit[];

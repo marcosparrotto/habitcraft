@@ -18,16 +18,17 @@ interface Row {
 
 type SeedHabit = Omit<Habit, "id" | "user_id" | "created_at" | "kind" | "end_time">;
 
+// Dados fictícios para demonstrar os diferentes horários e metas.
 const ROTINA: SeedHabit[] = [
-  { slug: "devocional", name: "Devocional (2-3 capítulos)", icon: "🙏", pixel_icon: "book_gold", color: "gold", frequency_type: "daily", scheduled_time: "06:35:00", days_of_week: [1, 2, 3, 4, 5, 6, 7], category: "Espiritual", target_quantity: null, target_unit: null, weekly_target_count: null, archived: false },
-  { slug: "passeio_manha", name: "Passeio manhã + podcast técnico", icon: "🐾", pixel_icon: "bone", color: "grass", frequency_type: "daily", scheduled_time: "06:50:00", days_of_week: [1, 2, 3, 4, 5, 6, 7], category: "Movimento", target_quantity: null, target_unit: null, weekly_target_count: null, archived: false },
-  { slug: "estudo_cert", name: "Estudo de certificação", icon: "📚", pixel_icon: "book_purple", color: "diamond", frequency_type: "daily", scheduled_time: "07:45:00", days_of_week: [1, 2, 3, 4, 5], category: "Carreira", target_quantity: null, target_unit: null, weekly_target_count: null, archived: false },
-  { slug: "ingles_revisao", name: "Revisão leve de inglês", icon: "✍️", pixel_icon: "note", color: "copper", frequency_type: "daily", scheduled_time: "08:10:00", days_of_week: [1, 3], category: "Idiomas", target_quantity: null, target_unit: null, weekly_target_count: null, archived: false },
-  { slug: "academia", name: "Academia (no almoço)", icon: "🏋️", pixel_icon: "dumbbell", color: "redstone", frequency_type: "daily", scheduled_time: "12:00:00", days_of_week: [1, 2, 3, 4, 5], category: "Movimento", target_quantity: null, target_unit: null, weekly_target_count: null, archived: false },
-  { slug: "ingles_aula", name: "Aula de inglês", icon: "🧠", pixel_icon: "note", color: "copper", frequency_type: "daily", scheduled_time: "18:15:00", days_of_week: [1, 3], category: "Idiomas", target_quantity: null, target_unit: null, weekly_target_count: null, archived: false },
-  { slug: "passeio_noite", name: "Passeio noturno", icon: "🐾", pixel_icon: "bone", color: "emerald", frequency_type: "daily", scheduled_time: "19:30:00", days_of_week: [1, 2, 3, 4, 5, 6, 7], category: "Movimento", target_quantity: null, target_unit: null, weekly_target_count: null, archived: false },
-  { slug: "leitura", name: "Leitura de ficção", icon: "📖", pixel_icon: "book_red", color: "wood", frequency_type: "daily", scheduled_time: "22:30:00", days_of_week: [1, 2, 3, 4, 5, 6, 7], category: "Lazer", target_quantity: null, target_unit: null, weekly_target_count: null, archived: false },
-  { slug: "dormir", name: "Dormir até 23h", icon: "😴", pixel_icon: "bed", color: "netherite", frequency_type: "daily", scheduled_time: "23:00:00", days_of_week: [1, 2, 3, 4, 5, 6, 7], category: "Sono", target_quantity: null, target_unit: null, weekly_target_count: null, archived: false },
+  { slug: "planejar_dia", name: "Planejar o dia", icon: "🙏", pixel_icon: "book_gold", color: "gold", frequency_type: "daily", scheduled_time: "07:00:00", days_of_week: [1, 2, 3, 4, 5, 6, 7], category: "Organização", target_quantity: null, target_unit: null, weekly_target_count: null, archived: false },
+  { slug: "alongamento", name: "Alongamento", icon: "🐾", pixel_icon: "bone", color: "grass", frequency_type: "daily", scheduled_time: "07:15:00", days_of_week: [1, 2, 3, 4, 5, 6, 7], category: "Movimento", target_quantity: null, target_unit: null, weekly_target_count: null, archived: false },
+  { slug: "estudo", name: "Estudar um tema novo", icon: "📚", pixel_icon: "book_purple", color: "diamond", frequency_type: "daily", scheduled_time: "08:00:00", days_of_week: [1, 2, 3, 4, 5], category: "Carreira", target_quantity: null, target_unit: null, weekly_target_count: null, archived: false },
+  { slug: "revisao", name: "Revisar anotações", icon: "✍️", pixel_icon: "note", color: "copper", frequency_type: "daily", scheduled_time: "08:30:00", days_of_week: [1, 3], category: "Idiomas", target_quantity: null, target_unit: null, weekly_target_count: null, archived: false },
+  { slug: "exercicio", name: "Exercício físico", icon: "🏋️", pixel_icon: "dumbbell", color: "redstone", frequency_type: "daily", scheduled_time: "12:30:00", days_of_week: [1, 2, 3, 4, 5], category: "Movimento", target_quantity: null, target_unit: null, weekly_target_count: null, archived: false },
+  { slug: "curso", name: "Curso online", icon: "🧠", pixel_icon: "note", color: "copper", frequency_type: "daily", scheduled_time: "18:30:00", days_of_week: [1, 3], category: "Idiomas", target_quantity: null, target_unit: null, weekly_target_count: null, archived: false },
+  { slug: "caminhada", name: "Caminhada", icon: "🐾", pixel_icon: "bone", color: "emerald", frequency_type: "daily", scheduled_time: "20:00:00", days_of_week: [1, 2, 3, 4, 5, 6, 7], category: "Movimento", target_quantity: null, target_unit: null, weekly_target_count: null, archived: false },
+  { slug: "leitura", name: "Leitura de ficção", icon: "📖", pixel_icon: "book_red", color: "wood", frequency_type: "daily", scheduled_time: "21:30:00", days_of_week: [1, 2, 3, 4, 5, 6, 7], category: "Lazer", target_quantity: null, target_unit: null, weekly_target_count: null, archived: false },
+  { slug: "dormir", name: "Preparar para dormir", icon: "😴", pixel_icon: "bed", color: "netherite", frequency_type: "daily", scheduled_time: "22:00:00", days_of_week: [1, 2, 3, 4, 5, 6, 7], category: "Sono", target_quantity: null, target_unit: null, weekly_target_count: null, archived: false },
   { slug: "agua", name: "Beber água", icon: "💧", pixel_icon: null, color: "diamond", frequency_type: "multiple_daily", scheduled_time: null, days_of_week: [1, 2, 3, 4, 5, 6, 7], category: "Saúde", target_quantity: 8, target_unit: "copos", weekly_target_count: null, archived: false },
 ];
 
@@ -43,8 +44,8 @@ const BLOCOS: Omit<Habit, "id" | "user_id" | "created_at">[] = [
     color: "stone",
     kind: "block",
     frequency_type: "daily",
-    scheduled_time: "09:00:00",
-    end_time: "18:00:00",
+    scheduled_time: "10:00:00",
+    end_time: "17:00:00",
     days_of_week: [1, 2, 3, 4, 5],
     category: "Trabalho",
     target_quantity: null,
@@ -138,6 +139,7 @@ function makeBuilder(table: string) {
 
   const api: any = {
     select: () => api,
+    abortSignal: () => api,
     insert: (rows: Row | Row[]) => {
       operation = "insert";
       payload = Array.isArray(rows) ? rows : [rows];
@@ -192,8 +194,12 @@ export function installFakeSupabase() {
     data: { session: { user: { id: USER_ID } } },
     error: null,
   });
-  client.auth.onAuthStateChange = () => ({
-    data: { subscription: { unsubscribe() {} } },
-  });
+  client.auth.onAuthStateChange = (callback: any) => {
+    let active = true;
+    queueMicrotask(() => {
+      if (active) callback("INITIAL_SESSION", { user: { id: USER_ID } });
+    });
+    return { data: { subscription: { unsubscribe() { active = false; } } } };
+  };
   client.auth.signOut = async () => ({ error: null });
 }

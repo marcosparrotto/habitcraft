@@ -3,6 +3,25 @@
 App pessoal de rastreamento de hábitos com tema visual blocky/pixel-art e gamificação
 (streaks, XP, medalhas por marcos). React + Vite + Tailwind + Supabase.
 
+> **Projeto pessoal de estudo descontinuado.** A aplicação e o banco de produção
+> foram desligados. O código é mantido como portfólio e referência, sem manutenção contínua.
+> O projeto foi desenvolvido para uso pessoal com uma conta.
+
+## O que foi desenvolvido
+
+- Interface em React e TypeScript, com componentes reutilizáveis e tema que acompanha o horário.
+- Consultas e mutações com TanStack Query, formulários com React Hook Form e Zod.
+- Autenticação com Supabase e isolamento de dados por políticas RLS no PostgreSQL.
+- Cálculo de sequências, aderência e medalhas a partir do histórico de check-ins.
+- Sandbox local com dados fictícios para explorar a interface sem banco ativo.
+
+## Experimentar a interface
+
+Instale as dependências com `npm ci`, copie `.env.local.example` para `.env.local`
+e execute `npm run dev`. Para o sandbox, os valores de exemplo podem ser mantidos:
+ele substitui as consultas e a autenticação por dados em memória.
+Abra `http://localhost:5173/sandbox.html`. Nenhum banco é necessário nessa demonstração.
+
 ## Setup
 
 ### 1. Supabase
@@ -26,11 +45,14 @@ Preencha `.env.local` com a URL e a anon key do passo anterior. O arquivo está 
 ### 3. Rodar
 
 ```bash
-npm install
+npm ci
 npm run dev
 ```
 
-### 4. Rotina semanal (seed)
+### 4. Rotina de demonstração (seed)
+
+Os hábitos e horários do seed e do sandbox são fictícios. O seed é opcional;
+rode em uma base de demonstração com um único usuário.
 
 No SQL Editor, nesta ordem:
 
@@ -50,8 +72,8 @@ No SQL Editor, nesta ordem:
 ## Publicar
 
 O app é estático (HTML/CSS/JS) e fala direto com o Supabase, então qualquer host
-de site estático serve. Está publicado na **Cloudflare** (Workers com assets
-estáticos), configurado por [`wrangler.toml`](wrangler.toml).
+de site estático serve. A implantação original usava **Cloudflare** (Workers com assets
+estáticos), configurada por [`wrangler.toml`](wrangler.toml).
 
 1. No painel da Cloudflare: **Build > Compute > Workers & Pages**, importe o
    repositório do GitHub.
@@ -63,16 +85,13 @@ estáticos), configurado por [`wrangler.toml`](wrangler.toml).
 4. No Supabase, em **Authentication > URL Configuration**, ponha a URL publicada
    como *Site URL*.
 
-A partir daí cada `git push` na `main` publica sozinho, e o endereço abre em
-qualquer aparelho — celular, tablet, desktop.
+Caso você configure essa integração em um fork, os pushes na branch configurada
+podem disparar novas publicações. O serviço original está desativado.
 
 > Não existe `public/_redirects`: a regra `/* -> /index.html 200` do Netlify é
 > rejeitada pelo Cloudflare como loop infinito. Quem faz o roteamento do SPA é
 > `not_found_handling = "single-page-application"` no `wrangler.toml`. Se um dia
 > mudar para Netlify, o arquivo precisa voltar.
->
-> GitHub Pages não serve aqui: publicar a partir de repositório privado exige
-> plano pago.
 
 ### Segurança
 
@@ -83,9 +102,9 @@ consequências práticas:
 - **Desligue o cadastro público** em *Authentication > Providers > Email >
   "Allow new users to sign up"*. O app não tem tela de cadastro, mas o endpoint
   fica aberto e qualquer um com a URL poderia criar contas no seu projeto.
-- Rode [`supabase/004_seguranca.sql`](supabase/004_seguranca.sql): as políticas
-  passam a exigir que o `habit_id` de um check-in ou medalha pertença a quem
-  está gravando, não só que o `user_id` bata.
+- O `schema.sql` já exige que o hábito referenciado por um check-in ou medalha
+  pertença ao usuário. Para bancos criados com a versão antiga, aplique
+  [`supabase/004_seguranca.sql`](supabase/004_seguranca.sql).
 
 `public/_headers` aplica CSP, `frame-ancestors 'none'` (anti-clickjacking),
 `nosniff` e `Referrer-Policy`. O script que evita o piscar de tema mora em
@@ -142,7 +161,7 @@ hábito: **sequência** (🔥 consecutivos) e **total** (📦 acumulado, com fal
 Bloco fixo existe só para dar contexto: ele preenche a grade de horários e aparece
 como linha não clicável nas listas, mostrando onde o dia já está tomado. Se trabalho
 fosse um hábito, a sequência passaria a medir presença no trabalho junto com
-devocional e leitura, e o dia só fecharia depois de "marcar que trabalhou".
+planejamento e leitura, e o dia só fecharia depois de "marcar que trabalhou".
 
 O filtro mora em `useHabits()`, que só devolve `kind = 'habit'` — por isso nenhuma
 tela precisa lembrar de excluir blocos. Quem quer bloco chama `useTimeBlocks()`.

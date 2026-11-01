@@ -1,3 +1,4 @@
+import { useAuth } from "../lib/AuthContext";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "../lib/supabaseClient";
 import type { Badge, BadgeMetric, Milestone } from "../types";
@@ -5,12 +6,15 @@ import type { Badge, BadgeMetric, Milestone } from "../types";
 export const badgesKey = ["badges"];
 
 export function useBadges() {
+  const { session } = useAuth();
   return useQuery({
-    queryKey: badgesKey,
-    queryFn: async (): Promise<Badge[]> => {
+    queryKey: [...badgesKey, session?.user.id],
+    enabled: !!session,
+    queryFn: async ({ signal }): Promise<Badge[]> => {
       const { data, error } = await supabase
         .from("badges")
         .select("*")
+        .abortSignal(signal)
         .order("achieved_at", { ascending: true });
       if (error) throw error;
       return data as Badge[];
