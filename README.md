@@ -1,7 +1,11 @@
 # HabitCraft
 
-App pessoal de rastreamento de hábitos com tema visual blocky/pixel-art e gamificação
-(streaks, XP, medalhas por marcos). React + Vite + Tailwind + Supabase.
+A ideia do HabitCraft era criar um app de gestão de hábitos com um layout inspirado
+no **Minecraft**: blocos, pixel art e uma paleta que remete aos materiais e minérios
+do jogo. A proposta era tornar o acompanhamento da rotina mais divertido, combinando
+hábitos com gamificação — sequências, XP e medalhas por conquistas.
+
+Desenvolvido com React, TypeScript, Vite, Tailwind CSS e Supabase.
 
 > **Projeto pessoal de estudo descontinuado.** A aplicação e o banco de produção
 > foram desligados. O código é mantido como portfólio e referência, sem manutenção contínua.
